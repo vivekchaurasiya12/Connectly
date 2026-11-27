@@ -1,0 +1,40 @@
+
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Verify Java') {
+            steps {
+                sh 'java -version'
+            }
+        }
+
+        stage('Build and Test Auth Service') {
+            steps {
+                dir('backend/auth-service') {
+                    sh 'chmod +x mvnw && ./mvnw -B clean verify'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Auth Service CI completed successfully.'
+        }
+        failure {
+            echo 'Auth Service CI failed. Check the build logs.'
+        }
+    }
+}
