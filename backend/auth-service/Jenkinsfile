@@ -1,10 +1,10 @@
-
 pipeline {
     agent any
 
     options {
         timestamps()
         disableConcurrentBuilds()
+        skipDefaultCheckout(true)
     }
 
     stages {
@@ -23,7 +23,21 @@ pipeline {
         stage('Build and Test Auth Service') {
             steps {
                 dir('backend/auth-service') {
-                    sh 'chmod +x mvnw && ./mvnw -B clean verify'
+                    sh 'chmod +x mvnw'
+
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'connectly-auth-db',
+                            usernameVariable: 'DB_USERNAME',
+                            passwordVariable: 'DB_PASSWORD'
+                        )
+                    ]) {
+                        withEnv([
+                            'DB_URL=jdbc:postgresql://connectly-postgres:5432/auth_db'
+                        ]) {
+                            sh './mvnw -B clean verify'
+                        }
+                    }
                 }
             }
         }
@@ -33,6 +47,7 @@ pipeline {
         success {
             echo 'Auth Service CI completed successfully.'
         }
+
         failure {
             echo 'Auth Service CI failed. Check the build logs.'
         }
